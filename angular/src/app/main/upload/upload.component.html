@@ -1,0 +1,11 @@
+<div>
+    <div>FileUpload</div>
+    <p-fileUpload multiple="multiple"
+                  id="DefaultFileUploadFileInput"
+                  name="DefaultFileUploadFileInput[]"
+                  [url]="uploadUrl"
+                  maxFileSize="1000000"
+                  (onUpload)="onUpload($event)"
+                  (onBeforeSend)="upload()">
+    </p-fileUpload>
+</div>

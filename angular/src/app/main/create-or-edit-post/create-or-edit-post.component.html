@@ -1,0 +1,77 @@
+<div bsModal #modal="bs-modal" (onShown)="onShown()" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modal" aria-hidden="true" [config]="{backdrop: 'static'}">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form *ngIf="active" #personForm="ngForm" novalidate (ngSubmit)="save()">
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        <span *ngIf="create_or_edit_id == 0">Create New Post</span>
+                        <span *ngIf="create_or_edit_id != 0">Edit Post</span>
+
+                    </h4>
+                    <button type="button" class="close" (click)="close()" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>{{"Menu Name" | localize}}</label>
+                        <form>
+                            <select name="MenuId" class="form-control" [(ngModel)]="savedPost.menuId" required>
+                                <option *ngFor="let lastMenu of lastMenus" value="{{lastMenu.id}}" selected>{{lastMenu.menuName}}</option>
+                            </select>
+                        </form>
+
+                        <label>{{"Title" | localize}}</label>
+                        <input #nameInput class="form-control" type="text" name="title" [(ngModel)]="savedPost.title" required>
+
+                        <label>{{"Short Description" | localize}}</label>
+                        <textarea class="form-control" rows="4" name="short-description" [(ngModel)]="savedPost.shortDescription" required></textarea>
+
+                        <label>{{"Content" | localize}}</label>
+                        <p-editor-container>
+                            <p-editor-toolbar required>
+                                <p-editor  [(ngModel)]="savedPost.contents" name="contents" [style]="{'height':'320px'}">
+                                    <ng-template pTemplate="header">
+                                        <span class="ql-format-group">
+                                            <span title="Bold" class="ql-format-button ql-bold"></span>
+                                            <span class="ql-format-separator"></span>
+                                            <span title="Italic" class="ql-format-button ql-italic"></span>
+                                            <span class="ql-format-separator"></span>
+                                            <span title="Underline" class="ql-format-button ql-underline"></span>
+                                            <span class="ql-format-separator"></span>
+                                            <span title="Strikethrough" class="ql-format-button ql-strike"></span>
+                                        </span>
+                                    </ng-template>
+                                </p-editor>
+                            </p-editor-toolbar>
+                        </p-editor-container>
+
+                        <div style="display: flex; justify-content: space-between;">
+                            <input multiple="multiple" #imgInput type="file" class="d-none" (change)="onUpload($event) ">
+                            <button  type="button" style="margin-left: 0; height: 24px;" (click)="reset()">
+                                <i class="fa fa-upload mr-1"></i>
+                                <span>{{l('SelectFile')}}</span>
+                            </button>
+                        </div>
+
+                        <div class="attach-file" *ngFor="let file of uploadFiles">
+                            {{file.name}}
+                        </div>
+
+                        <div *ngIf="files.length != 0">
+                            <div class="attach-file" *ngFor="let file of files">
+                                <a href="" (click)="downloadFile(file)">{{file.name}}</a>
+                                <a class="editOrDelete" href="javascript:;"
+                                    (click)="deleteFile(file, files)">[delete]</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button [disabled]="saving" type="button" class="btn btn-secondary" (click)="close()">{{"Cancel" | localize}}</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="!personForm.form.valid" [buttonBusy]="saving" [busyText]="l('SavingWithThreeDot' | localize)"><i class="fa fa-save"></i> <span>{{"Save" | localize}}</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

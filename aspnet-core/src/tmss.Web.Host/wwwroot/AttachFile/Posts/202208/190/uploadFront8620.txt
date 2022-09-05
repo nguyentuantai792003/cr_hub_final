@@ -1,0 +1,187 @@
+import { AppSessionService } from '@shared/common/session/app-session.service';
+import { ValueFormatterParams } from '@ag-grid-enterprise/all-modules';
+import { HttpClient } from '@angular/common/http';
+import { GetAttachListByClaimDto, SrvPrtSendClaimServiceProxy } from '@shared/service-proxies/service-proxies';
+import { Component, ElementRef, Injector, ViewChild } from '@angular/core';
+import { AppComponentBase } from '@shared/common/app-component-base';
+import { ModalDirective } from 'ngx-bootstrap/modal';
+import { CustomColDef, GridParams, PaginationParamsModel } from '@app/shared/common/models/base.model';
+import { AgCellButtonRendererComponent } from '@app/shared/common/grid/ag-cell-button-renderer/ag-cell-button-renderer.component';
+import { finalize } from 'rxjs/operators';
+import { AppConsts } from '@shared/AppConsts';
+import { FileUpload } from 'primeng';
+import { DataFormatService } from '@app/shared/common/services/data-format.service';
+import { saveAs } from 'file-saver';
+
+@Component({
+    selector: 'sendClaimAttachedFileModal',
+    templateUrl: './send-claim-attached-file-modal.component.html',
+    styleUrls: ['./send-claim-attached-file-modal.component.less'],
+})
+export class SendClaimAttachedFileModalComponent extends AppComponentBase {
+    @ViewChild('sendClaimAttachedFileModal', { static: false }) modal!: ModalDirective;
+    @ViewChild('imgInput', { static: false }) InputVar: ElementRef;
+    @ViewChild('ExcelFileUpload', { static: false }) excelFileUpload!: FileUpload;
+
+    paginationParams: PaginationParamsModel = { pageNum: 1, pageSize: 10, totalCount: 0, totalPage: 0, sorting: '', skipCount: 0 };
+    isLoading: boolean | undefined;
+    currentTenant = abp.session.tenantId;
+    claimId: number | undefined;
+    partRecvId: number | undefined;
+    fileColDef: CustomColDef[] = [];
+    attachParams: GridParams | undefined;
+    attachFiles: any[] = [];
+    fileName: string = '';
+    formData: FormData = new FormData();
+    uploadUrl: string = '';
+    downloadUrl: string = '';
+    removeUrl: string = '';
+    attachResult: GetAttachListByClaimDto = new GetAttachListByClaimDto();
+
+    frameworkComponents = {
+        agCellButtonComponent: AgCellButtonRendererComponent,
+    };
+    constructor(injector: Injector,
+        private _serviceProxy: SrvPrtSendClaimServiceProxy,
+        private dataFormatService: DataFormatService,
+        private appSessionService: AppSessionService,
+        private _httpClient: HttpClient) {
+        super(injector);
+        this.uploadUrl = `${AppConsts.remoteServiceBaseUrl}/ServiceUpload/UploadFileToFolder`;
+        this.downloadUrl = `${AppConsts.remoteServiceBaseUrl}/ServiceDownloadFile/GetAttachFileToDownload`;
+        this.removeUrl = `${AppConsts.remoteServiceBaseUrl}/ServiceRemoveAttachFile/RemoveAttachFile`;
+        //Danh sách kích cỡ tệp tải lên
+        (this.fileColDef = [
+            {
+                headerName: this.l('STT'),
+                headerTooltip: this.l('STT'),
+                field: 'stt',
+                cellRenderer: params => params.rowIndex + 1,
+                flex: 1,
+            },
+            {
+                headerName: this.l('Name'),
+                headerTooltip: this.l('Name'),
+                field: 'attachName',
+                flex: 4,
+            },
+            {
+                headerName: this.l('Size'),
+                headerTooltip: this.l('Size'),
+                field: 'attachSize',
+                flex: 2,
+                cellClass: ['text-right'],
+                valueFormatter: (params: ValueFormatterParams) => params?.value ? this.dataFormatService.moneyFormat(params.value) : '',
+            },
+            {
+                headerName: '',
+                headerTooltip: '',
+                cellRenderer: 'agCellButtonComponent',
+                flex: 2,
+                cellClass: 'p-0',
+                buttonDef: {
+                    text: this.l('Download'),
+                    useRowData: true,
+                    function: this.downloadFile.bind(this),
+                },
+            },
+            {
+                headerName: '',
+                headerTooltip: '',
+                cellRenderer: 'agCellButtonComponent',
+                flex: 2,
+                cellClass: 'p-0',
+                buttonDef: {
+                    text: this.l('Delete'),
+                    useRowData: true,
+                    className: 'btn-outline-danger',
+                    disabled: abp.session.tenantId ? false : true,
+                    function: this.deleteFile.bind(this),
+                },
+            },
+        ]);
+    }
+
+    ngOnInit() {
+        //this.paginationParams = { pageNum: 1, pageSize: 10, totalCount: 0, totalPage: 0, sorting: '', skipCount: 0 };
+    }
+
+    // Lay danh sach cac file da upload
+    getUploadedFiles() {
+        this.isLoading = true;
+        this._serviceProxy.getAttachListByClaimId(this.claimId ?? undefined).pipe(finalize(() => this.isLoading = false))
+            .subscribe(res => this.attachFiles = res);
+    }
+
+    show(claimId?: number, partRecvId?: number): void {
+        this.formData = new FormData();
+        this.fileName = '';
+        this.claimId = claimId;
+        this.partRecvId = partRecvId;
+        this.getUploadedFiles();
+        this.modal.show();
+    }
+
+    callBackAttachData(params: GridParams) {
+        this.attachParams = params;
+    }
+
+    onUpload(data: { target: { files: Array<any> } }): void {
+        if (data?.target?.files.length > 0) {
+            this.formData = new FormData();
+            const formData: FormData = new FormData();
+            const file = data?.target?.files[0];
+            this.fileName = file?.name;
+            let fileName = `${(this.fileName.split('.'))[0]}_${this.appSessionService.tenancyName}_${(new Date()).getTime()}.${(this.fileName.split('.'))[1]}`;
+            formData.append('file', file, fileName);
+            this.formData = formData;
+        }
+    }
+
+    upload() {
+        this.isLoading = true;
+        this._httpClient
+            .post<any>(this.uploadUrl, this.formData)
+            .pipe(finalize(() => {
+                this.excelFileUpload?.clear();
+                this._serviceProxy.saveFileClaim(this.attachResult).pipe(finalize(() => this.getUploadedFiles())).toPromise();
+            })).subscribe(response => {
+                if (response.success) {
+                    this.notify.success(this.l('UploadSuccesfully'));
+                    this.attachResult = response.result?.attachResult ?? new GetAttachListByClaimDto();
+                    this.attachResult.claimId = this.claimId;
+                    this.attachResult.partRecvId = this.partRecvId;
+                }
+            });
+    }
+
+    deleteFile(param: any) {
+        this.isLoading = true;
+        this._httpClient.get(this.removeUrl, {
+            params: { "attachFile": param.data.attachFile, "claimAttachId": param.data.id }, responseType: 'blob'
+        }).pipe(finalize(() => this.isLoading = false)).subscribe(() => {
+            this.notify.success(this.l('RemovedClaimSuccessfully'));
+            this.getUploadedFiles();
+        });
+    }
+
+    downloadFile(param: any) {
+        this._httpClient.get(this.downloadUrl, { params: { 'filename': param.data.attachName }, responseType: 'blob' })
+            .subscribe(blob => {
+                saveAs(blob, param.data.attachName);
+            });
+    }
+
+    close(): void {
+        this.attachFiles = [];
+        this.modal.hide();
+    }
+
+    reset() {
+        setTimeout(() => {
+            this.InputVar.nativeElement.value = "";
+            this.fileName = '';
+            this.InputVar.nativeElement.click();
+        }, 500);
+    }
+}

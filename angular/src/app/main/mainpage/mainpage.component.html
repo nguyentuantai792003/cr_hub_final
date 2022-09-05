@@ -1,0 +1,46 @@
+<div class="container">
+    <sub-header>
+        <div role="actions">
+            <button *ngIf="!tenantId" (click)="createOrEditPost.show(0)" class="btn btn-primary"><i
+                class="fa fa-plus"></i>Create New Post</button>
+        </div>
+    </sub-header>
+
+
+    <div class="row">
+        <div *ngFor="let menu of menus; let indexOfelement=index;" class="col-lg-6 col-md-6 col-12">
+            <div *ngIf="indexOfelement == 3" class="w-100 d-none d-md-block"></div>
+            <div *ngIf="indexOfelement == 0 || indexOfelement == 2" class="box-right">
+                <div class="menu-title"><b>{{menu.menuName}}</b></div>
+                <div *ngFor="let post of menu.postDtos">
+                    <ul>
+                        <li>
+                            <a class="data-list" href="/app/main/postpage/{{post.menuId}}/{{post.id}}">{{post.title}}</a>
+                            <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                                (click)="createOrEditPost.show(post.id)">[Edit]</a>
+                            <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                                (click)="deletePost(post, indexOfelement)">[Delete]</a>  
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div *ngIf="indexOfelement == 1 || indexOfelement == 3">
+                <div class="menu-title"><b>{{menu.menuName}}</b></div>
+                <div *ngFor="let post of menu.postDtos">
+                    <ul>
+                        <li>
+                            <a class="data-list" href="/app/main/postpage/{{post.menuId}}/{{post.id}}">{{post.title}}</a>
+                            <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                                (click)="createOrEditPost.show(post.id)">[Edit]</a>
+                            <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                                (click)="deletePost(post, indexOfelement)">[Delete]</a>  
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <createOrEditPost #createOrEditPost (modalSave)="getMenus()"></createOrEditPost>
+    </div>
+</div>

@@ -1,0 +1,155 @@
+using Abp.UI;
+using Abp.Web.Models;
+using Microsoft.AspNetCore.Mvc;
+using System.IO;
+using System.Security.Cryptography;
+using tmss.Crm.Voc.ComplainManagement.Dto;
+using tmss.Services.Part.SendClaim.Dto;
+
+namespace tmss.Web.Controllers
+{
+    public class ServiceUploadControllerBase : tmssControllerBase
+    {
+        [HttpPost]
+        [System.Obsolete]
+        public IActionResult UploadFileToFolder()
+        {
+            try
+            {
+
+                //var file = Request.Form.Files.First(); 
+
+                var file = Request.Form.Files[0];
+
+                string sFileExtension = Path.GetExtension(file.FileName).ToLower();
+                var folderName = Path.Combine("wwwroot", "AttachFile", "SendClaim");
+                var folderNameDownload = Path.Combine("", "AttachFile", "SendClaim");
+                if (file == null)
+                {
+                    throw new UserFriendlyException(L("File_Empty_Error"));
+                }
+
+                if (file.Length > 1048576 * 100) //100 MB
+                {
+                    throw new UserFriendlyException(L("File_SizeLimit_Error"));
+                }
+
+
+                if (file.Length > 0)
+                {
+                    string resultFormat = "";
+                    var intermediaries = file.FileName;
+                    char[] array = intermediaries.ToCharArray();
+                    for (int i = 1; i < array.Length; i++)
+                    {
+                        if (array[i - 1] == '.')
+                        {
+                            for (int j = i; j < array.Length; j++)
+                            {
+                                resultFormat = resultFormat + array[j];
+                            }
+                        }
+                    }
+                    //if (resultFormat == "pdf")
+                    //{
+                    //    folderName = Path.Combine("wwwroot", "PDFs");
+                    //    folderNameDownload = Path.Combine("", "PDFs");
+                    //}
+                    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                    var ms = new MemoryStream();
+                    file.CopyTo(ms);
+                    //string fileName = file.FileName;
+                    var fullPath = Path.Combine(pathToSave, file.FileName);
+                    var dbPath = Path.Combine(folderNameDownload, file.FileName);
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        file.CopyTo(stream);
+                    }
+
+                    GetAttachListByClaimDto attachResult = new GetAttachListByClaimDto { AttachFile = dbPath, AttachName = file.FileName, AttachSize = file.Length };
+                    return Ok(new { attachResult });
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+            catch (UserFriendlyException ex)
+            {
+                return Json(new AjaxResponse(new ErrorInfo(ex.Message)));
+            }
+        }
+
+        #region -- Quản lý ý kiến không hài lòng / khiếu nại của KH
+        [HttpPost]
+        [System.Obsolete]
+        public IActionResult UploadComplainMgmtFileToFolder()
+        {
+            try
+            {
+
+                //var file = Request.Form.Files.First(); 
+
+                var file = Request.Form.Files[0];
+
+                var folderName = "wwwroot/AttachFile/ComplainMgmt";
+                var folderNameDownload = "AttachFile/ComplainMgmt";
+                if (file == null)
+                {
+                    throw new UserFriendlyException(L("File_Empty_Error"));
+                }
+
+                if (file.Length > 1048576 * 100) //100 MB
+                {
+                    throw new UserFriendlyException(L("File_SizeLimit_Error"));
+                }
+
+
+                if (file.Length > 0)
+                {
+                    string resultFormat = "";
+                    var intermediaries = file.FileName;
+                    char[] array = intermediaries.ToCharArray();
+                    for (int i = 1; i < array.Length; i++)
+                    {
+                        if (array[i - 1] == '.')
+                        {
+                            for (int j = i; j < array.Length; j++)
+                            {
+                                resultFormat = resultFormat + array[j];
+                            }
+                        }
+                    }
+                    //if (resultFormat == "pdf")
+                    //{
+                    //    folderName = Path.Combine("wwwroot", "PDFs");
+                    //    folderNameDownload = Path.Combine("", "PDFs");
+                    //}
+                    var pathToSave = Directory.GetCurrentDirectory() + "/" + folderName;
+
+                    var ms = new MemoryStream();
+                    file.CopyTo(ms);
+                    var fullPath = pathToSave + "/" + file.FileName;
+                    var dbPath = folderNameDownload + "/" + file.FileName;
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        file.CopyTo(stream);
+                    }
+
+                    GetListAttachFileDto attachComplainMgmts = new GetListAttachFileDto { AttachFile = dbPath, AttachName = file.FileName, AttachSize = file.Length };
+                    return Ok(new { attachComplainMgmts });
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+            catch (UserFriendlyException ex)
+            {
+                return Json(new AjaxResponse(new ErrorInfo(ex.Message)));
+            }
+        }
+        #endregion
+    }
+}

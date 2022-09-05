@@ -1,0 +1,49 @@
+<div class="container">
+    <div class="row menu-header box-bottom">
+        <div class="col-lg-10 col-md-10 col-10 menu-name">
+            Kết quả tìm kiếm
+        </div>
+
+        <div class="col-lg-2 col-md-2 col-2">
+            <button *ngIf="!tenantId" (click)="createOrEditPost.show(0)" class="btn btn-primary"><i
+                class="fa fa-plus"></i>Create New Post</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-7 col-md-7 col-7 box-right">
+            <div class="box-bottom" *ngFor="let post of posts; let indexOfelement=index;">
+                <div *ngIf="indexOfelement < 10">
+                    <div class="post-title">
+                        <a class="data-list" href="/app/main/postpage/{{post.menuId}}/{{post.id}}">{{post.title}}</a>
+                        <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                            (click)="createOrEditPost.show(post.id)">[Edit]</a>
+                        <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                            (click)="deletePost(post)">[Delete]</a>
+                    </div>
+
+                    <div class="short-description">
+                        {{post.shortDescription}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5 col-md-5 col-5">
+            <div *ngFor="let menu of menus; let indexOfelement=index;">
+                <div class="menu-title"><b>{{menu.menuName}}</b></div>
+                <div *ngFor="let post of menu.postDtos">
+                    <ul>
+                        <li>
+                            <a class="data-list" href="/app/main/postpage/{{post.menuId}}/{{post.id}}">{{post.title}}</a>
+                            <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                                (click)="createOrEditPost.show(post.id)">[Edit]</a>
+                            <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                                (click)="deletePost(post)">[Delete]</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <createOrEditPost #createOrEditPost (modalSave)="loadPost()"></createOrEditPost>
+    </div>
+</div>

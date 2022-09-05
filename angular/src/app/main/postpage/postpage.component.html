@@ -1,0 +1,68 @@
+<div class="container">
+    <sub-header>
+        <div role="actions">
+            <button *ngIf="!tenantId" (click)="createOrEditPost.show(0)" class="btn btn-primary"><i
+                class="fa fa-plus"></i>Create New Post</button>
+        </div>
+    </sub-header>
+    
+    <div class="row">
+        <div class="col-lg-7 col-md-7 col-7 box-right">
+            <div class="post-name">
+                <b>{{currentPost.title}}</b>
+                <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                    (click)="createOrEditPost.show(currentPost.id)">[Edit]</a>
+                <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                    (click)="deletePost(currentPost)">[Delete]</a>
+            </div>
+            
+            <div id="original" class="post-content">
+                {{convert(currentPost.contents)}}
+            </div>
+
+            <div class="box-bottom">
+                <div class="menu-title"><b>File đính kèm</b></div>
+                <div class="attach-file " *ngFor="let file of files">
+                    <a href="javascript:;" (click)="createOrEditPost.downloadFile(file)">{{file.name}}</a>
+                </div>
+            </div>
+            
+            <div class="menu-title"><b>Tin liên quan</b></div>
+            <div class="related-post" *ngFor="let post of relatedPosts">
+                <div *ngIf="post.id != currentPost.id" class="box-bottom">
+                    <div class="post-title">
+                        <a class="data-list" href="/app/main/postpage/{{post.menuId}}/{{post.id}}">{{post.title}}</a>
+                        <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                            (click)="createOrEditPost.show(currentPost.id)">[Edit]</a>
+                        <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                            (click)="deletePost(currentPost)">[Delete]</a>
+                    </div>
+                    <div class="short-description">
+                        {{post.shortDescription}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5 col-md-5 col-5">
+            <div *ngFor="let menu of menus; let indexOfelement=index;">
+                <div *ngIf="menu.id != currentRootMenu.rootParentId">
+                    <div class="menu-title"><b>{{menu.menuName}}</b></div>
+                    <div *ngFor="let post of menu.postDtos">
+                        <ul>
+                            <li>
+                                <a class="data-list" href="/app/main/postpage/{{post.menuId}}/{{post.id}}">{{post.title}}</a>
+                                <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                                    (click)="createOrEditPost.show(post.id)">[Edit]</a>
+                                <a *ngIf="!tenantId" class="editOrDelete" href="javascript:;"
+                                    (click)="deletePost(post)">[Delete]</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <createOrEditPost #createOrEditPost (modalSave)="loadPost()"></createOrEditPost>
+    </div>
+</div>
